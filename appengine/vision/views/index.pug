@@ -1,0 +1,17 @@
+extends layout
+
+block content
+  h1 Google Cloud Platform - Face Detection sample
+  p This Node.js Express application demonstrates App Engine Flexible, Google Cloud Storage, and the Cloud Vision API.
+  br
+
+  each image in images
+    img(src=image width=200 height=200)
+    br
+
+  form(action="upload_photo", method="POST", enctype="multipart/form-data")
+    p Upload File:
+    input(type="file", name="photo")
+    br
+    br
+    input(type="submit", name="submit", value="Submit")
