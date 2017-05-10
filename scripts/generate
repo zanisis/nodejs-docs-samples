@@ -68,10 +68,3 @@ function findSamples (directory, depth) {
 };
 
 findSamples(PROJECT_ROOT, 3);
-
-// Update root-level package.json (by shelling to npm)
-// const spawn = require('child_process').spawn;
-// const args = [`add`, `-D`].concat(Object.keys(pkgSet).map(pkg => `${pkg}@${pkgSet[pkg]}`));
-// spawn(`yarn`, args, {
-//   cwd: PROJECT_ROOT
-// });
