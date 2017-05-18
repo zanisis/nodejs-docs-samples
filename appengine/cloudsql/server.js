@@ -15,69 +15,87 @@
 
 'use strict';
 
+// Require process, so we can mock environment variables
+const process = require('process');
+
 // [START app]
 // [START setup]
 const express = require('express');
-const mysql = require('mysql');
+const Knex = require('knex');
 const crypto = require('crypto');
 
 const app = express();
 app.enable('trust proxy');
 // [END setup]
+let knex;
 
-// [START connect]
-const config = {
-  user: process.env.MYSQL_USER,
-  password: process.env.MYSQL_PASSWORD,
-  database: process.env.MYSQL_DATABASE
-};
+function connectMysql () {
+  // [START connect_mysql]
+  const config = {
+    user: process.env.MYSQL_USER,
+    password: process.env.MYSQL_PASSWORD,
+    database: process.env.MYSQL_DATABASE
+  };
 
-if (process.env.INSTANCE_CONNECTION_NAME) {
-  config.socketPath = `/cloudsql/${process.env.INSTANCE_CONNECTION_NAME}`;
+  if (process.env.INSTANCE_CONNECTION_NAME) {
+    config.socketPath = `/cloudsql/${process.env.INSTANCE_CONNECTION_NAME}`;
+  }
+
+  // Connect to the database
+  const knex = Knex({
+    client: 'mysql',
+    connection: config
+  });
+  // [END connect_mysql]
+
+  return knex;
 }
 
-// Connect to the database
-const connection = mysql.createConnection(config);
-// [END connect]
+function connectPostgres () {
+  // [START connect_postgres]
+  const config = {
+    user: process.env.POSTGRES_USER,
+    password: process.env.POSTGRES_PASSWORD,
+    database: process.env.POSTGRES_DATABASE
+  };
+
+  if (process.env.INSTANCE_CONNECTION_NAME) {
+    config.socketPath = `/cloudsql/${process.env.INSTANCE_CONNECTION_NAME}`;
+  }
+
+  // Connect to the database
+  const knex = Knex({
+    client: 'pg',
+    connection: config
+  });
+  // [END connect_postgres]
+
+  return knex;
+}
 
 // [START insertVisit]
 /**
  * Insert a visit record into the database.
  *
  * @param {object} visit The visit record to insert.
- * @param {function} callback The callback function.
  */
-function insertVisit (visit, callback) {
-  connection.query('INSERT INTO `visits` SET ?', visit, (err) => {
-    if (err) {
-      callback(err);
-      return;
-    }
-    callback();
-  });
+function insertVisit (visit) {
+  return knex('visits').insert(visit);
 }
 // [END insertVisit]
 
 // [START getVisits]
-const SQL_STRING = `SELECT timestamp, userIp
-FROM visits
-ORDER BY timestamp DESC
-LIMIT 10;`;
-
 /**
  * Retrieve the latest 10 visit records from the database.
- *
- * @param {function} callback The callback function.
  */
-function getVisits (callback) {
-  connection.query(SQL_STRING, (err, results) => {
-    if (err) {
-      callback(err);
-      return;
-    }
-
-    callback(null, results.map((visit) => `Time: ${visit.timestamp}, AddrHash: ${visit.userIp}`));
-  });
+function getVisits () {
+  return knex.select('timestamp', 'userIp')
+    .from('visits')
+    .orderBy('timestamp', 'desc')
+    .limit(10)
+    .then((results) => {
+      return results.map((visit) => `Time: ${visit.timestamp}, AddrHash: ${visit.userIp}`);
+    });
 }
 // [END getVisits]
 
@@ -89,37 +107,40 @@ app.get('/', (req, res, next) => {
     userIp: crypto.createHash('sha256').update(req.ip).digest('hex').substr(0, 7)
   };
 
-  insertVisit(visit, (err, results) => {
-    if (err) {
-      next(err);
-      return;
-    }
-
-    // Query the last 10 visits from the database.
-    getVisits((err, visits) => {
-      if (err) {
-        next(err);
-        return;
-      }
-
+  insertVisit(visit)
+    .then(() => {
+      // Query the last 10 visits from the database.
+      return getVisits();
+    })
+    .then((visits) => {
       res
         .status(200)
         .set('Content-Type', 'text/plain')
         .send(`Last 10 visits:\n${visits.join('\n')}`)
         .end();
+    })
+    .catch((err) => {
+      next(err);
     });
-  });
 });
 
-if (module === require.main) {
-  // [START listen]
-  const PORT = process.env.PORT || 8080;
-  app.listen(PORT, () => {
-    console.log(`App listening on port ${PORT}`);
-    console.log('Press Ctrl+C to quit.');
-  });
-  // [END listen]
+// Get type of SQL client to use
+const sqlClient = process.env.SQL_CLIENT;
+if (sqlClient === 'pg') {
+  knex = connectPostgres();
+} else if (sqlClient === 'mysql') {
+  knex = connectMysql();
+} else {
+  throw new Error(`The SQL_CLIENT environment variable must be set to 'pg' or 'mysql'.`);
 }
+
+// [START listen]
+const PORT = process.env.PORT || 8080;
+app.listen(PORT, () => {
+  console.log(`App listening on port ${PORT}`);
+  console.log('Press Ctrl+C to quit.');
+});
+// [END listen]
 // [END app]
 
 module.exports = app;
