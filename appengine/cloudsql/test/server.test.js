@@ -51,12 +51,9 @@ function getSample (sqlClient) {
   const processMock = {
     env: {
       SQL_CLIENT: sqlClient,
-      MYSQL_USER: 'mysql_user',
-      MYSQL_PASSWORD: 'mysql_password',
-      MYSQL_DATABASE: 'mysql_database',
-      POSTGRES_USER: 'postgres_user',
-      POSTGRES_PASSWORD: 'postgres_password',
-      POSTGRES_DATABASE: 'postgres_database'
+      SQL_USER: 'user',
+      SQL_PASSWORD: 'password',
+      SQL_DATABASE: 'database'
     }
   };
 
@@ -89,9 +86,9 @@ test(`should set up sample in MySQL`, (t) => {
   t.deepEqual(sample.mocks.Knex.firstCall.args, [{
     client: 'mysql',
     connection: {
-      user: sample.mocks.process.env.MYSQL_USER,
-      password: sample.mocks.process.env.MYSQL_PASSWORD,
-      database: sample.mocks.process.env.MYSQL_DATABASE
+      user: sample.mocks.process.env.SQL_USER,
+      password: sample.mocks.process.env.SQL_PASSWORD,
+      database: sample.mocks.process.env.SQL_DATABASE
     }
   }]);
 });
@@ -104,15 +101,15 @@ test(`should set up sample in Postgres`, (t) => {
   t.deepEqual(sample.mocks.Knex.firstCall.args, [{
     client: 'pg',
     connection: {
-      user: sample.mocks.process.env.POSTGRES_USER,
-      password: sample.mocks.process.env.POSTGRES_PASSWORD,
-      database: sample.mocks.process.env.POSTGRES_DATABASE
+      user: sample.mocks.process.env.SQL_USER,
+      password: sample.mocks.process.env.SQL_PASSWORD,
+      database: sample.mocks.process.env.SQL_DATABASE
     }
   }]);
 });
 
 test(`should validate SQL_CLIENT env var`, (t) => {
-  const expected = `The SQL_CLIENT environment variable must be set to 'pg' or 'mysql'.`;
+  const expected = `The SQL_CLIENT environment variable must be set to lowercase 'pg' or 'mysql'.`;
   t.throws(() => { getSample(null); }, expected);
   t.throws(() => { getSample('foo'); }, expected);
 

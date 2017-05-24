@@ -32,9 +32,9 @@ let knex;
 function connectMysql () {
   // [START connect_mysql]
   const config = {
-    user: process.env.MYSQL_USER,
-    password: process.env.MYSQL_PASSWORD,
-    database: process.env.MYSQL_DATABASE
+    user: process.env.SQL_USER,
+    password: process.env.SQL_PASSWORD,
+    database: process.env.SQL_DATABASE
   };
 
   if (process.env.INSTANCE_CONNECTION_NAME) {
@@ -54,9 +54,9 @@ function connectMysql () {
 function connectPostgres () {
   // [START connect_postgres]
   const config = {
-    user: process.env.POSTGRES_USER,
-    password: process.env.POSTGRES_PASSWORD,
-    database: process.env.POSTGRES_DATABASE
+    user: process.env.SQL_USER,
+    password: process.env.SQL_PASSWORD,
+    database: process.env.SQL_DATABASE
   };
 
   if (process.env.INSTANCE_CONNECTION_NAME) {
@@ -131,7 +131,7 @@ if (sqlClient === 'pg') {
 } else if (sqlClient === 'mysql') {
   knex = connectMysql();
 } else {
-  throw new Error(`The SQL_CLIENT environment variable must be set to 'pg' or 'mysql'.`);
+  throw new Error(`The SQL_CLIENT environment variable must be set to lowercase 'pg' or 'mysql'.`);
 }
 
 // [START listen]

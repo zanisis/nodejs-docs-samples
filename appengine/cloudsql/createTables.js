@@ -135,5 +135,5 @@ if (sqlClient === 'pg') {
 } else if (sqlClient === 'mysql') {
   exports.mysqlMain();
 } else {
-  throw new Error(`The SQL_CLIENT environment variable must be set to 'pg' or 'mysql'.`);
+  throw new Error(`The SQL_CLIENT environment variable must be set to lowercase 'pg' or 'mysql'.`);
 }

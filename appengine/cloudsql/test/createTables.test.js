@@ -176,7 +176,7 @@ test.cb.serial(`should handle knex creation error`, (t) => {
 });
 
 test(`should validate SQL_CLIENT env var`, (t) => {
-  const expected = `The SQL_CLIENT environment variable must be set to 'pg' or 'mysql'.`;
+  const expected = `The SQL_CLIENT environment variable must be set to lowercase 'pg' or 'mysql'.`;
   t.throws(() => { doProxiquire(getSample(null)); }, expected);
   t.throws(() => { doProxiquire(getSample('foo')); }, expected);
 
